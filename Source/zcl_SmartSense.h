@@ -72,11 +72,11 @@ extern "C"
 #define LIGHT_MAIN_SCREEN_EVT                   0x0010
 #define LIGHT_LEVEL_CTRL_EVT                    0x0020
 #define LIGHT_START_EZMODE_EVT                  0x0040 
-  
 #define SENSORS_ADC_TIMER_EVT                   0x0080 
 #define zclOccupancySensor_UtoO_TIMER_EVT       0x0100
 #define zclOccupancySensor_OtoU_TIMER_EVT       0x0200
-
+#define FACTORY_RESET_NWK_JOIN_EVT              0x0400
+  
 // Application Display Modes
 #define LIGHT_MAINMODE      0x00
 #define LIGHT_HELPMODE      0x01

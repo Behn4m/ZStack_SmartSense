@@ -1183,8 +1183,8 @@
           <state>SECURE=1</state>
           <state>TC_LINKKEY_JOIN</state>
           <state>NV_INIT</state>
-          <state>xNV_RESTORE</state>
-          <state>xHOLD_AUTO_START</state>
+          <state>NV_RESTORE</state>
+          <state>HOLD_AUTO_START</state>
           <state>ZTOOL_P1</state>
           <state>MT_TASK</state>
           <state>MT_APP_FUNC</state>
@@ -2187,10 +2187,10 @@
           <state>SECURE=1</state>
           <state>TC_LINKKEY_JOIN</state>
           <state>NV_INIT</state>
-          <state>xNV_RESTORE</state>
+          <state>NV_RESTORE</state>
           <state>xPOWER_SAVING</state>
           <state>NWK_AUTO_POLL</state>
-          <state>xHOLD_AUTO_START</state>
+          <state>HOLD_AUTO_START</state>
           <state>ZTOOL_P1</state>
           <state>MT_TASK</state>
           <state>MT_APP_FUNC</state>

@@ -41,7 +41,7 @@
         </option>
         <option>
           <name>MemOverride</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>MemFile</name>
@@ -77,15 +77,15 @@
         </option>
         <option>
           <name>OCDownloadVerifyAll</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>OCProductVersion</name>
-          <state>5.40.2.51615</state>
+          <state>7.30.4.8186</state>
         </option>
         <option>
           <name>OCDynDriverList</name>
-          <state>JLINK_ID</state>
+          <state>ARMSIM_ID</state>
         </option>
         <option>
           <name>OCLastSavedByProductVersion</name>
@@ -97,7 +97,7 @@
         </option>
         <option>
           <name>UseFlashLoader</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CLowLevel</name>
@@ -356,7 +356,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -364,11 +364,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -384,31 +384,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -481,7 +481,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
       </data>
     </settings>
@@ -628,7 +628,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -636,11 +636,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -656,31 +656,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -743,7 +743,7 @@
         <debug>1</debug>
         <option>
           <name>JLinkSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCJLinkDoLogfile</name>
@@ -763,7 +763,7 @@
         </option>
         <option>
           <name>JLinkInitialSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCDoJlinkMultiTarget</name>
@@ -836,7 +836,7 @@
         </option>
         <option>
           <name>CCJLinkUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCJLinkInterfaceRadio</name>
@@ -849,7 +849,7 @@
         <option>
           <name>CCJLinkResetList</name>
           <version>6</version>
-          <state>7</state>
+          <state>5</state>
         </option>
         <option>
           <name>CCJLinkInterfaceCmdLine</name>
@@ -1044,7 +1044,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCMacraigorInterfaceRadio</name>
@@ -1269,16 +1269,16 @@
         </option>
         <option>
           <name>TIPackage</name>
-          <state>C:\ti\ccs_base</state>
+          <state></state>
         </option>
         <option>
           <name>CCXds100InterfaceList</name>
           <version>2</version>
-          <state>9</state>
+          <state>0</state>
         </option>
         <option>
           <name>BoardFile</name>
-          <state>$TOOLKIT_DIR$\config\debugger\TexasInstruments\xds\CC2538_XDS100v3c2.dat</state>
+          <state></state>
         </option>
         <option>
           <name>DoLogfile</name>
@@ -1444,7 +1444,7 @@
         </option>
         <option>
           <name>OCProductVersion</name>
-          <state>5.40.2.51615</state>
+          <state>7.30.4.8186</state>
         </option>
         <option>
           <name>OCDynDriverList</name>
@@ -1719,7 +1719,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -1727,11 +1727,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -1747,31 +1747,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -1844,7 +1844,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
       </data>
     </settings>
@@ -1991,7 +1991,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -1999,11 +1999,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -2019,31 +2019,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -2106,7 +2106,7 @@
         <debug>1</debug>
         <option>
           <name>JLinkSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCJLinkDoLogfile</name>
@@ -2126,7 +2126,7 @@
         </option>
         <option>
           <name>JLinkInitialSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCDoJlinkMultiTarget</name>
@@ -2199,7 +2199,7 @@
         </option>
         <option>
           <name>CCJLinkUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCJLinkInterfaceRadio</name>
@@ -2407,7 +2407,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCMacraigorInterfaceRadio</name>
@@ -2641,7 +2641,7 @@
         </option>
         <option>
           <name>BoardFile</name>
-          <state>$TOOLKIT_DIR$\config\debugger\TexasInstruments\xds\CC2538_XDS100v3c2.dat</state>
+          <state>Browse to your board file</state>
         </option>
         <option>
           <name>DoLogfile</name>
@@ -2767,11 +2767,11 @@
         </option>
         <option>
           <name>MemOverride</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>MemFile</name>
-          <state>$TOOLKIT_DIR$\CONFIG\debugger\TexasInstruments\CC2538SF53.ddf</state>
+          <state></state>
         </option>
         <option>
           <name>RunToEnable</name>
@@ -2803,19 +2803,19 @@
         </option>
         <option>
           <name>OCDownloadVerifyAll</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>OCProductVersion</name>
-          <state>5.40.2.51615</state>
+          <state>7.30.4.8186</state>
         </option>
         <option>
           <name>OCDynDriverList</name>
-          <state>JLINK_ID</state>
+          <state>ARMSIM_ID</state>
         </option>
         <option>
           <name>OCLastSavedByProductVersion</name>
-          <state>7.30.4.8186</state>
+          <state></state>
         </option>
         <option>
           <name>OCDownloadAttachToProgram</name>
@@ -2823,7 +2823,7 @@
         </option>
         <option>
           <name>UseFlashLoader</name>
-          <state>1</state>
+          <state>0</state>
         </option>
         <option>
           <name>CLowLevel</name>
@@ -2843,7 +2843,7 @@
         </option>
         <option>
           <name>FlashLoadersV3</name>
-          <state>$TOOLKIT_DIR$\config\flashloader\TexasInstruments\FlashCC2538RAM32K.board</state>
+          <state></state>
         </option>
         <option>
           <name>OCImagesSuppressCheck1</name>
@@ -3082,7 +3082,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -3090,11 +3090,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -3110,31 +3110,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -3207,7 +3207,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
       </data>
     </settings>
@@ -3354,7 +3354,7 @@
         </option>
         <option>
           <name>RDICatchUndef</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchSWI</name>
@@ -3362,11 +3362,11 @@
         </option>
         <option>
           <name>RDICatchData</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchPrefetch</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>RDICatchIRQ</name>
@@ -3382,31 +3382,31 @@
         </option>
         <option>
           <name>CatchMMERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchNOCPERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchCHKERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchSTATERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchBUSERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchINTERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchHARDERR</name>
-          <state>0</state>
+          <state>1</state>
         </option>
         <option>
           <name>CatchDummy</name>
@@ -3469,7 +3469,7 @@
         <debug>1</debug>
         <option>
           <name>JLinkSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCJLinkDoLogfile</name>
@@ -3489,7 +3489,7 @@
         </option>
         <option>
           <name>JLinkInitialSpeed</name>
-          <state>32</state>
+          <state>1000</state>
         </option>
         <option>
           <name>CCDoJlinkMultiTarget</name>
@@ -3562,7 +3562,7 @@
         </option>
         <option>
           <name>CCJLinkUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCJLinkInterfaceRadio</name>
@@ -3575,7 +3575,7 @@
         <option>
           <name>CCJLinkResetList</name>
           <version>6</version>
-          <state>7</state>
+          <state>5</state>
         </option>
         <option>
           <name>CCJLinkInterfaceCmdLine</name>
@@ -3770,7 +3770,7 @@
         </option>
         <option>
           <name>CCJTagUpdateBreakpoints</name>
-          <state>main</state>
+          <state>_call_main</state>
         </option>
         <option>
           <name>CCMacraigorInterfaceRadio</name>
@@ -3995,16 +3995,16 @@
         </option>
         <option>
           <name>TIPackage</name>
-          <state>C:\ti\ccs_base</state>
+          <state></state>
         </option>
         <option>
           <name>CCXds100InterfaceList</name>
           <version>2</version>
-          <state>9</state>
+          <state>0</state>
         </option>
         <option>
           <name>BoardFile</name>
-          <state>$TOOLKIT_DIR$\config\debugger\TexasInstruments\xds\CC2538_XDS100v3c2.dat</state>
+          <state></state>
         </option>
         <option>
           <name>DoLogfile</name>

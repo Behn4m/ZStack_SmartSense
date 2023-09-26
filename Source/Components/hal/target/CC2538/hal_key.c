@@ -66,9 +66,9 @@
  *                                        GLOBAL VARIABLES
  **************************************************************************************************/
 
-//static uint8 halSavedKeys;
+static uint8 halSavedKeys;
 static uint8 halIntKeys;
-//static halKeyCBack_t pHal_KeyProcessFunction;
+static halKeyCBack_t pHal_KeyProcessFunction;
 bool Hal_KeyIntEnable;
 
 
@@ -114,32 +114,11 @@ void HalKeyInit( void )
 uint8 hal_key_keys(void)                                           
 {                                                                 
   uint8 x = 0;
-  uint8 ucKeysPressed = bspKeyPushed(BSP_KEY_ALL);
+  uint8 ucKeysPressed = bspKeyPushed(BSP_INPUT_ALL);
     if(ucKeysPressed & BSP_KEY_1)
   {
     x |= HAL_KEY_SW_1;
   }
-   /* mine
-  if(ucKeysPressed & BSP_KEY_LEFT)
-  {
-    x |= HAL_KEY_SW_1;
-  }
- 
-  if(ucKeysPressed & BSP_KEY_RIGHT)
-  {
-    x |= HAL_KEY_SW_2;
-  }
-
-  if(ucKeysPressed & BSP_KEY_DOWN)
-  {
-    x |= HAL_KEY_SW_3;
-  }
-  
-  if(ucKeysPressed & BSP_KEY_SELECT)
-  {
-    x |= HAL_KEY_SW_5;
-  }
-  */
   return x; 
 }
 
@@ -156,19 +135,16 @@ uint8 hal_key_int_keys(void)
 { 
   uint8 x = 0;
   /* Get bitmask of buttons pushed (clear directional keys' bitmask) */
-  uint32_t ui32DirPins = GPIOPinRead(BSP_PIR_BASE, BSP_PIR);
+  uint32_t ui32DirPins = ~GPIOPinRead(BSP_KEY_BASE, BSP_INPUT_ALL);
   
-  if(ui32DirPins & BSP_PIR)
-  {
-    x |= HAL_KEY_SW_1;
-  }
-  uint32_t ui32DirsPins = ~GPIOPinRead(BSP_KEY_BASE, BSP_KEY_1);
-  if(ui32DirsPins & BSP_KEY_1)
+//  if(ui32DirPins & BSP_PIR)
+//  {
+//    x |= HAL_KEY_SW_1;
+//  }
+  if(ui32DirPins & BSP_KEY_1)
   {
     x |= HAL_KEY_SW_2;
   }  
-
-
   return x;
 }
 
@@ -188,22 +164,18 @@ void HalKeyConfig( bool interruptEnable, halKeyCBack_t cback)
     (void)interruptEnable;
     (void)cback;
     
-    GPIOPinTypeGPIOInput(BSP_KEY_BASE,BSP_PIR);
+    GPIOPinTypeGPIOInput(BSP_KEY_BASE,BSP_KEY_1);
     
-    IOCPadConfigSet(BSP_PIR_BASE, BSP_PIR, IOC_OVERRIDE_PDE);
-//    IOCPadConfigSet(BSP_KEY_BASE, BSP_KEY_1, IOC_OVERRIDE_PUE);
+    //IOCPadConfigSet(BSP_PIR_BASE, BSP_PIR, IOC_OVERRIDE_PUE);
+    IOCPadConfigSet(BSP_KEY_BASE, BSP_KEY_1, IOC_OVERRIDE_PUE);
     // Disable interrupts
-    GPIOPinIntDisable(BSP_PIR_BASE, BSP_PIR);
-//    GPIOPinIntDisable(BSP_KEY_BASE, BSP_KEY_1);
+    GPIOPinIntDisable(BSP_PIR_BASE, BSP_INPUT_ALL);
     // Connect bspKeyPushedISR() to key pins
-    ioPinIntRegister(BSP_PIR_BASE, BSP_PIR, &interrupt_keybd);
-//    ioPinIntRegister(BSP_KEY_BASE, BSP_KEY_1, &interrupt_keybd);
+    ioPinIntRegister(BSP_KEY_BASE, BSP_KEY_1, &interrupt_keybd);
     // Set trigger type
-    GPIOIntTypeSet(BSP_PIR_BASE, BSP_PIR, GPIO_RISING_EDGE); 
-//    GPIOIntTypeSet(BSP_KEY_BASE, BSP_KEY_1, GPIO_FALLING_EDGE); 
+    GPIOIntTypeSet(BSP_KEY_BASE, BSP_KEY_1, GPIO_FALLING_EDGE); 
     
-    GPIOPinIntEnable(BSP_PIR_BASE,BSP_PIR);
-//    GPIOPinIntEnable(BSP_KEY_BASE,BSP_KEY_1);
+    GPIOPinIntEnable(BSP_KEY_BASE,BSP_KEY_1);
     IntPrioritySet(INT_GPIOC, HAL_INT_PRIOR_KEY); 
 }
 

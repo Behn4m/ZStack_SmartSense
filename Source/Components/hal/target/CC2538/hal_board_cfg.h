@@ -486,7 +486,7 @@ extern void MAC_RfFrontendSetup(void);
 
 /* Set to TRUE enable KEY usage, FALSE disable it */
 #ifndef HAL_KEY
-#define HAL_KEY FALSE
+#define HAL_KEY TRUE
 #endif
 
 /* Set to TRUE enable UART usage, FALSE disable it */

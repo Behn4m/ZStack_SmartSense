@@ -145,6 +145,7 @@ byte zclSmartSense_TaskID;
 uint8 zclSmartSenseSeqNum;
 
 
+
 /*********************************************************************
  * GLOBAL FUNCTIONS
  */
@@ -154,6 +155,12 @@ uint8 zclSmartSenseSeqNum;
  */
 uint8 temp; //mine
 uint16 adc_value;//mine
+
+uint8 nwk_key_timer_counter=0;//farhad
+uint8  nwk_join_flag=0;//farhad
+uint8 factory_reset_flag=0;//farhad
+
+static uint8 hold_disable = 0; 
 
 uint8 error =0;//sht20
 nt16 sT; //variable for raw temperature ticks
@@ -218,7 +225,7 @@ static void zclSmartSense_ReadSensors(void);//mine
 static void zclSmartSense_CheckPIR(void);//mine
 static void zclSmartSense_PIR_SenseMv(void);//mine
 static void zclSendReport(byte SensedValue);//mine
-
+static void zclLight_FactoryResetNwkJoine(void);//mine
 
 static void zclLight1_BasicResetCB( void );
 static void zclLight1_IdentifyCB( zclIdentify_t *pCmd );
@@ -365,8 +372,12 @@ void zclSmartSense_Init( byte task_id )
 #ifdef ZGP_AUTO_TT
   zgpTranslationTable_RegisterEP ( &zclLight1_SimpleDesc );
 #endif
-  
-  
+/*************Restore Hold Auto Start from NV***********************************/  
+  if (ZSUCCESS == osal_nv_item_init( ZCD_NV_HOLD_DISABLE,1, (void *)&hold_disable))
+  {
+    osal_nv_read( ZCD_NV_HOLD_DISABLE, 0, 1, (void *)&hold_disable );
+  }   
+/********************/  
   //farhad  
     error |= SHT2x_SoftReset(); // soft reset sht20
     uint8 buf1[30]="SHT2x_SoftReset\n\r";
@@ -376,7 +387,11 @@ void zclSmartSense_Init( byte task_id )
   
   // start a reload timer.On timer OVF we check ADC for measuring Battery Voltage
   //osal_start_reload_timer( zclSmartSense_TaskID,LIGHT_ADC_TIMER_EVT,5000); 
-  osal_start_timerEx( zclSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,15000);  
+  osal_start_timerEx( zclSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,15000); 
+  
+/******** Check NWK Hold Status**************/  
+  if(hold_disable == 1 )
+    ZDOInitDevice( 0 );   
 
 }
 
@@ -423,6 +438,11 @@ uint16 zclSmartSense_event_loop( uint8 task_id, uint16 events )
                (zclLight1_NwkState == DEV_ROUTER)   ||
                (zclLight1_NwkState == DEV_END_DEVICE) )
           {
+            if(hold_disable == 0)
+            {
+              hold_disable=1;//farhad
+              osal_nv_write( ZCD_NV_HOLD_DISABLE,0, 1,(void *)&hold_disable);//farhad
+            }            
             giLightScreenMode = LIGHT_MAINMODE;
 #ifdef ZCL_EZMODE
             zcl_EZModeAction( EZMODE_ACTION_NETWORK_STARTED, NULL );
@@ -534,7 +554,23 @@ uint16 zclSmartSense_event_loop( uint8 task_id, uint16 events )
     zclSmartSense_CheckPIR();    
     return ( events ^ zclOccupancySensor_OtoU_TIMER_EVT );
   }  
-
+  if ( events & FACTORY_RESET_NWK_JOIN_EVT )
+  {
+    if(factory_reset_flag == 1)
+    {
+      factory_reset_flag=0; 
+      zclLight1_BasicResetCB();//factory reset function
+      
+    }
+    else if (nwk_join_flag == 1)
+    {
+      nwk_join_flag=0;
+      ZDOInitDevice(0);// join or form network immediately      
+    }
+    else
+      zclLight_FactoryResetNwkJoine();
+    return ( events ^ FACTORY_RESET_NWK_JOIN_EVT );
+  }    
   // Discard unknown events
   return 0;
 }
@@ -561,8 +597,9 @@ static void zclLight_HandleKeys( byte shift, byte keys )
   }
 
   if ( keys & HAL_KEY_SW_2 )
-  {
-    //ZDOInitDevice( 0 );//farhad
+  {        
+    osal_start_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT, 1000 );
+    nwk_key_timer_counter=0;
   }
 
 }
@@ -617,10 +654,13 @@ static void zclLight1_BasicResetCB( void )
   osal_memset( &leaveReq, 0, sizeof( NLME_LeaveReq_t ) );
 
   // This will enable the device to rejoin the network after reset.
-  leaveReq.rejoin = TRUE;
+  leaveReq.rejoin = FALSE;
 
   // Set the NV startup option to force a "new" join.
-  zgWriteStartupOptions( ZG_STARTUP_SET, ZCD_STARTOPT_DEFAULT_NETWORK_STATE );
+  zgWriteStartupOptions( ZG_STARTUP_SET, 3 );
+  
+  hold_disable = 0;
+  osal_nv_write( ZCD_NV_HOLD_DISABLE, 0,1, &hold_disable );
 
   // Leave the network, and reset afterwards
   if ( NLME_LeaveReq( &leaveReq ) != ZSuccess )
@@ -1108,9 +1148,6 @@ static void zclSmartSense_ReadSensors(void)
 static void zclSmartSense_PIR_SenseMv(void)
 {
   Mv_Cnt++;
-  if(Mv_Cnt == zclOccupancySensor_UtoOThresh)
-    zclSmartSense_CheckPIR();
-    
   if( PIR_flag )
   {
     osal_start_timerEx( zclSmartSense_TaskID, zclOccupancySensor_UtoO_TIMER_EVT,(zclOccupancySensor_UtoODelay*1000) );
@@ -1255,6 +1292,43 @@ static void zclSendReport(byte SensedValue)
 #endif  // ZCL_REPORT
     break;
   } // switch(SensedValue)
+}
+
+static void zclLight_FactoryResetNwkJoine(void)
+{ 
+  nwk_key_timer_counter++;
+  uint32_t NWK_Pin_Check = ~GPIOPinRead(BSP_KEY_BASE, BSP_KEY_1) & BSP_KEY_1;
+  
+  if (NWK_Pin_Check)
+    osal_start_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT, 1000 );
+  
+  if(nwk_key_timer_counter>=3 && nwk_key_timer_counter<9 && !hold_disable)
+  {
+    //blink led with a special algorithme for indicating device can enetr joining process
+    HalLedBlink (HAL_LED_NWK,3,30, 200);
+  }
+  if(!NWK_Pin_Check && nwk_key_timer_counter>=3 && nwk_key_timer_counter<9 && !hold_disable)
+  {
+    //stop timer that counts every 1s
+    osal_stop_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT);
+    // start a timer for making a gap between key press and join or form the network 
+    osal_start_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT, 2000 );
+    //set nwk_join flag
+     nwk_join_flag=1;
+  }
+  else if(NWK_Pin_Check && nwk_key_timer_counter>=10)
+  {
+    //stop timer that counts every 1s
+    osal_stop_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT);
+    //blink led with a special algorithme for indicating device is going to factory reset process
+    //HalLedBlink (uint8 leds, uint8 numBlinks, uint8 percent, uint16 period)
+    HalLedBlink (HAL_LED_NWK,5,70, 500);
+    //start a timer for making a gap between key press and factory reset 
+    osal_start_timerEx( zclSmartSense_TaskID, FACTORY_RESET_NWK_JOIN_EVT, 4000);
+    //set factory_reset flag
+    factory_reset_flag=1;
+  }
+  return;  
 }
 
 
