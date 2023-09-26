@@ -123,15 +123,13 @@ extern "C"
 
 /*@ hal_sys_ctrl.c + hal_key.c */
 
-#define BSP_KEY_BASE            GPIO_C_BASE     //!< Base
-#define BSP_KEY_1               GPIO_PIN_1      //!< PC1 // mine 
-#define BSP_KEY_ALL             BSP_KEY_1      //!< PC0 // mine 
+#define BSP_KEY_BASE            GPIO_C_BASE     //!< Base for NWK key
+#define BSP_KEY_1               GPIO_PIN_1      //!< PC1  
 
-
-#define BSP_PIR_BASE            GPIO_C_BASE     //!< Base for left/right/up/down
-#define BSP_PIR                 GPIO_PIN_0      //!< PC0 // mine 
+#define BSP_PIR_BASE            GPIO_C_BASE     //!< Base for PIR Input
+#define BSP_PIR                 GPIO_PIN_0      //!< PC0 
  
-
+#define BSP_KEY_ALL             (BSP_KEY_1 | BSP_PIR) 
 // Board LCD defines
 /*
 #define BSP_LCD_MODE_BASE       GPIO_B_BASE

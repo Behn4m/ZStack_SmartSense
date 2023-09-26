@@ -355,10 +355,10 @@ extern void MAC_RfFrontendSetup(void);
   SysCtrlWakeupSetting();                                                   \
                                                                             \
   /* mine*/                                                                 \
-  /*  Configure the leds and Relays as outputs */                                      \
+  /*  Configure the leds and Relays as outputs */                           \
   GPIOPinTypeGPIOOutput(BSP_LED_BASE, BSP_LED_1);                          \
-  /*GPIOPinTypeGPIOOutput(BSP_LED_BASE, BSP_LED_2);*/                          \
-  /*GPIOPinTypeGPIOOutput(BSP_RELAY_BASE, BSP_RELAY_1);*/                           \
+  GPIOPinTypeGPIOOutput(BSP_LED_BASE, BSP_LED_2);                          \
+  /*GPIOPinTypeGPIOOutput(BSP_KEY_BASE, BSP_KEY_1);*/                      \
   /*GPIOPinTypeGPIOOutput(BSP_RELAY_BASE, BSP_RELAY_2);*/                         \
   /*end of mine */                                                          \
                                                                             \

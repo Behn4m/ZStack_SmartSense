@@ -120,7 +120,6 @@ void HalUARTInitIsr(void)
   GPIOPinTypeUARTInput(GPIO_A_BASE, GPIO_PIN_4);
   GPIOPinTypeUARTOutput(GPIO_A_BASE, GPIO_PIN_6);  
   recRst();
-
 }
 
 /*************************************************************************************************

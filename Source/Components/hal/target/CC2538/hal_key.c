@@ -187,24 +187,23 @@ void HalKeyConfig( bool interruptEnable, halKeyCBack_t cback)
     //farhad
     (void)interruptEnable;
     (void)cback;
-    // Initialize keys on GPIO port D(input pullup)
-    GPIOPinTypeGPIOInput(BSP_PIR_BASE,  BSP_PIR);
-    GPIOPinTypeGPIOInput(BSP_KEY_BASE,  BSP_KEY_1);
+    
+    GPIOPinTypeGPIOInput(BSP_KEY_BASE,BSP_PIR);
+    
     IOCPadConfigSet(BSP_PIR_BASE, BSP_PIR, IOC_OVERRIDE_PDE);
-    IOCPadConfigSet(BSP_KEY_BASE, BSP_KEY_1, IOC_OVERRIDE_PUE);
+//    IOCPadConfigSet(BSP_KEY_BASE, BSP_KEY_1, IOC_OVERRIDE_PUE);
     // Disable interrupts
     GPIOPinIntDisable(BSP_PIR_BASE, BSP_PIR);
-    GPIOPinIntDisable(BSP_KEY_BASE, BSP_KEY_1);
+//    GPIOPinIntDisable(BSP_KEY_BASE, BSP_KEY_1);
     // Connect bspKeyPushedISR() to key pins
     ioPinIntRegister(BSP_PIR_BASE, BSP_PIR, &interrupt_keybd);
-    ioPinIntRegister(BSP_KEY_BASE, BSP_KEY_1, &interrupt_keybd);
+//    ioPinIntRegister(BSP_KEY_BASE, BSP_KEY_1, &interrupt_keybd);
     // Set trigger type
     GPIOIntTypeSet(BSP_PIR_BASE, BSP_PIR, GPIO_RISING_EDGE); 
-    GPIOIntTypeSet(BSP_KEY_BASE, BSP_KEY_1, GPIO_FALLING_EDGE); 
+//    GPIOIntTypeSet(BSP_KEY_BASE, BSP_KEY_1, GPIO_FALLING_EDGE); 
     
-//    GPIOPinIntEnable(BSP_PIR_BASE,BSP_PIR);
-    GPIOPinIntEnable(BSP_KEY_BASE,BSP_KEY_1);
-    IntPrioritySet(INT_GPIOA, HAL_INT_PRIOR_KEY);  
+    GPIOPinIntEnable(BSP_PIR_BASE,BSP_PIR);
+//    GPIOPinIntEnable(BSP_KEY_BASE,BSP_KEY_1);
     IntPrioritySet(INT_GPIOC, HAL_INT_PRIOR_KEY); 
 }
 

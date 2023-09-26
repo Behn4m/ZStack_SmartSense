@@ -1190,6 +1190,7 @@
           <state>MT_APP_FUNC</state>
           <state>MT_SYS_FUNC</state>
           <state>MT_ZDO_FUNC</state>
+          <state>MT_ZDO_CB_FUNC</state>
           <state>LCD_SUPPORTED=DEBUG</state>
           <state>MULTICAST_ENABLED=FALSE</state>
           <state>ZCL_READ</state>
@@ -1362,6 +1363,8 @@
           <state>$PROJ_DIR$\..\Source\Components\stack\zdo</state>
           <state>$PROJ_DIR$\..\Source\Components\zmac</state>
           <state>$PROJ_DIR$\..\Source\Components\zmac\f8w</state>
+          <state>$PROJ_DIR$\..\Source\EXT</state>
+          <state>$PROJ_DIR$\..\Source\EXT\SHT2x</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -2187,12 +2190,13 @@
           <state>xNV_RESTORE</state>
           <state>xPOWER_SAVING</state>
           <state>NWK_AUTO_POLL</state>
-          <state>HOLD_AUTO_START</state>
+          <state>xHOLD_AUTO_START</state>
           <state>ZTOOL_P1</state>
           <state>MT_TASK</state>
           <state>MT_APP_FUNC</state>
           <state>MT_SYS_FUNC</state>
           <state>MT_ZDO_FUNC</state>
+          <state>MT_ZDO_CB_FUNC</state>
           <state>LCD_SUPPORTED=DEBUG</state>
           <state>MULTICAST_ENABLED=FALSE</state>
           <state>ZCL_READ</state>
@@ -2366,6 +2370,8 @@
           <state>$PROJ_DIR$\..\Source\Components\stack\zdo</state>
           <state>$PROJ_DIR$\..\Source\Components\zmac</state>
           <state>$PROJ_DIR$\..\Source\Components\zmac\f8w</state>
+          <state>$PROJ_DIR$\..\Source\EXT</state>
+          <state>$PROJ_DIR$\..\Source\EXT\SHT2x</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>

@@ -13,11 +13,8 @@ StopOnUncaught=_ 0
 StopOnThrow=_ 0
 [JLinkDriver]
 CStepIntDis=_ 0
-TraceBufferSize=0x00010000
-TraceStallIfFIFOFull=0x00000000
-TracePortSize=0x00000000
 [DebugChecksum]
-Checksum=-2108385190
+Checksum=1971266090
 [CallStack]
 ShowArgs=0
 [Disassembly]
@@ -30,9 +27,13 @@ Mode=0
 Graph=0
 Symbiont=0
 Exclusions=
-[Trace1]
-Enabled=0
-ShowSource=1
+[xds100]
+xds100serialNo=06EB122011D8
+xds100foundProbes=
+xdsResetStyle=0
+xdsResetStrategy=2
+[Breakpoints]
+Count=0
 [Log file]
 LoggingEnabled=_ 0
 LogFile=_ ""
@@ -43,8 +44,7 @@ LogFile=_ ""
 [Disassemble mode]
 mode=0
 [Breakpoints2]
-Bp0=_ 1 "EMUL_CODE" "{$PROJ_DIR$\..\Source\Components\hal\target\CC2538\hal_key.c}.159.12" 0 0 1 "" 0 "" 0
-Count=1
+Count=0
 [Aliases]
 Count=0
 SuppressDialog=0

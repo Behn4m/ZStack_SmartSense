@@ -164,8 +164,6 @@ uint8 Mv_Cnt;//mine
 bool PIR_flag = TRUE;//mine
 uint8 zclOccupancySensor_LastOccupancy = 0x00;//mine
 
-afAddrType_t zclLight1_DstAddr;
-afAddrType_t zclLight2_DstAddr;/*mine*/
 afAddrType_t zclLightSensor_DstAddr;/*mine*/
 afAddrType_t zclOccupancySensor_DstAddr;/*mine*/
 afAddrType_t zclTemperatureSensor_DstAddr;/*mine*/
@@ -203,14 +201,6 @@ uint16 bindingInClusters[] =
 
 #endif  // ZCL_EZMODE
 
-// Test Endpoint to allow SYS_APP_MSGs
-static endPointDesc_t LIGHT_TestEp =
-{
-  LIGHT1_ENDPOINT,
-  &zclSmartSense_TaskID,
-  (SimpleDescriptionFormat_t *)NULL,  // No Simple description for this test endpoint
-  (afNetworkLatencyReq_t)0            // No Network Latency req
-};
 
 uint8 giLightScreenMode = LIGHT_MAINMODE;   // display the main screen mode first
 
@@ -218,73 +208,23 @@ uint8 gPermitDuration = 0;    // permit joining default to disabled
 
 devStates_t zclLight1_NwkState = DEV_INIT;
 
-#if ZCL_LEVEL_CTRL
-uint8 zclLight1_WithOnOff;       // set to TRUE if state machine should set light on/off
-uint8 zclLight1_NewLevel;        // new level when done moving
-bool  zclLight1_NewLevelUp;      // is direction to new level up or down?
-int32 zclLight1_CurrentLevel32;  // current level, fixed point (e.g. 192.456)
-int32 zclLight1_Rate32;          // rate in units, fixed point (e.g. 16.123)
-uint8 zclLight1_LevelLastLevel;  // to save the Current Level before the light was turned OFF
-#endif
+
 
 /*********************************************************************
  * LOCAL FUNCTIONS
  */
 static void zclLight_HandleKeys( byte shift, byte keys );
 static void zclSmartSense_ReadSensors(void);//mine
-static void zclLightSensor_SendIlluminance( void );//mine
 static void zclSmartSense_CheckPIR(void);//mine
 static void zclSmartSense_PIR_SenseMv(void);//mine
-static void zclOccupancySensor_SendOccupancy(void);//mine
+static void zclSendReport(byte SensedValue);//mine
 
 
 static void zclLight1_BasicResetCB( void );
 static void zclLight1_IdentifyCB( zclIdentify_t *pCmd );
 static void zclLight1_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp );
-static void zclLight1_OnOffCB( uint8 cmd );
 static void zclLight1_ProcessIdentifyTimeChange( void );
-/*mine*/
-//static void zclLight2_BasicResetCB( void );
-//static void zclLight2_IdentifyCB( zclIdentify_t *pCmd );
-//static void zclLight2_IdentifyQueryRspCB( zclIdentifyQueryRsp_t *pRsp );
-static void zclLight2_OnOffCB( uint8 cmd );
-//static void zclLight2_ProcessIdentifyTimeChange( void );
 
-#ifdef ZCL_LEVEL_CTRL
-static void zclLight1_LevelControlMoveToLevelCB( zclLCMoveToLevel_t *pCmd );
-static void zclLight1_LevelControlMoveCB( zclLCMove_t *pCmd );
-static void zclLight1_LevelControlStepCB( zclLCStep_t *pCmd );
-static void zclLight1_LevelControlStopCB( void );
-static void zclLight1_DefaultMove( void );
-static uint32 zclLight1_TimeRateHelper( uint8 newLevel );
-static uint16 zclLight1_GetTime ( uint8 level, uint16 time );
-static void zclLight1_MoveBasedOnRate( uint8 newLevel, uint32 rate );
-static void zclLight1_MoveBasedOnTime( uint8 newLevel, uint16 time );
-static void zclLight1_AdjustLightLevel( void );
-
-static void zclLight2_LevelControlMoveToLevelCB( zclLCMoveToLevel_t *pCmd );
-static void zclLight2_LevelControlMoveCB( zclLCMove_t *pCmd );
-static void zclLight2_LevelControlStepCB( zclLCStep_t *pCmd );
-static void zclLight2_LevelControlStopCB( void );
-static void zclLight2_DefaultMove( void );
-static uint32 zclLight2_TimeRateHelper( uint8 newLevel );
-static uint16 zclLight2_GetTime ( uint8 level, uint16 time );
-static void zclLight2_MoveBasedOnRate( uint8 newLevel, uint32 rate );
-static void zclLight2_MoveBasedOnTime( uint8 newLevel, uint16 time );
-static void zclLight2_AdjustLightLevel( void );
-#endif
-
-// app display functions
-static void zclLight1_LcdDisplayUpdate( void );
-#ifdef LCD_SUPPORTED
-static void zclLight1_LcdDisplayMainMode( void );
-static void zclLight1_LcdDisplayHelpMode( void );
-#endif
-static void zclLight_DisplayLight( void );
-
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-void zclLight1_UpdateLampLevel( uint8 level );
-#endif
 
 // Functions to process ZCL Foundation incoming Command/Response messages
 static void zclLight1_ProcessIncomingMsg( zclIncomingMsg_t *msg );
@@ -302,21 +242,7 @@ static uint8 zclLight1_ProcessInDiscAttrsRspCmd( zclIncomingMsg_t *pInMsg );
 static uint8 zclLight1_ProcessInDiscAttrsExtRspCmd( zclIncomingMsg_t *pInMsg );
 #endif
 
-/*********************************************************************
- * STATUS STRINGS
- */
-#ifdef LCD_SUPPORTED
-const char sDeviceName[]   = "  Sample Light";
-const char sClearLine[]    = " ";
-const char sSwLight[]      = "SW1: ToggleLight";  // 16 chars max
-const char sSwEZMode[]     = "SW2: EZ-Mode";
-char sSwHelp[]             = "SW5: Help       ";  // last character is * if NWK open
-const char sLightOn[]      = "    LIGHT ON ";
-const char sLightOff[]     = "    LIGHT OFF";
- #if ZCL_LEVEL_CTRL
- char sLightLevel[]        = "    LEVEL ###"; // displays level 1-254
- #endif
-#endif
+
 
 /*********************************************************************
  * ZCL General Profile Callback table
@@ -331,57 +257,10 @@ static zclGeneral_AppCallbacks_t zclLight1_CmdCallbacks =
 #endif
   NULL,                                   // Identify Trigger Effect command
   zclLight1_IdentifyQueryRspCB,      // Identify Query Response command
-  zclLight1_OnOffCB,                 // On/Off cluster commands
-  NULL,                                   // On/Off cluster enhanced command Off with Effect
-  NULL,                                   // On/Off cluster enhanced command On with Recall Global Scene
-  NULL,                                   // On/Off cluster enhanced command On with Timed Off
-#ifdef ZCL_LEVEL_CTRL
-  zclLight1_LevelControlMoveToLevelCB, // Level Control Move to Level command
-  zclLight1_LevelControlMoveCB,        // Level Control Move command
-  zclLight1_LevelControlStepCB,        // Level Control Step command
-  zclLight1_LevelControlStopCB,        // Level Control Stop command
-#endif
-#ifdef ZCL_GROUPS
-  NULL,                                   // Group Response commands
-#endif
-#ifdef ZCL_SCENES
-  NULL,                                  // Scene Store Request command
-  NULL,                                  // Scene Recall Request command
-  NULL,                                  // Scene Response command
-#endif
-#ifdef ZCL_ALARMS
-  NULL,                                  // Alarm (Response) commands
-#endif
-#ifdef SE_UK_EXT
-  NULL,                                  // Get Event Log command
-  NULL,                                  // Publish Event Log command
-#endif
-  NULL,                                  // RSSI Location command
-  NULL                                   // RSSI Location Response command
-};
-
-
-/*mine*/
-static zclGeneral_AppCallbacks_t zclLight2_CmdCallbacks =
-{
-  zclLight1_BasicResetCB,            // Basic Cluster Reset command
-  zclLight1_IdentifyCB,              // Identify command
-#ifdef ZCL_EZMODE
-  NULL,                                   // Identify EZ-Mode Invoke command
-  NULL,                                   // Identify Update Commission State command
-#endif
-  NULL,                                   // Identify Trigger Effect command
-  zclLight1_IdentifyQueryRspCB,      // Identify Query Response command
   NULL,                 // On/Off cluster commands
   NULL,                                   // On/Off cluster enhanced command Off with Effect
   NULL,                                   // On/Off cluster enhanced command On with Recall Global Scene
   NULL,                                   // On/Off cluster enhanced command On with Timed Off
-#ifdef ZCL_LEVEL_CTRL
-  zclLight1_LevelControlMoveToLevelCB, // Level Control Move to Level command
-  zclLight1_LevelControlMoveCB,        // Level Control Move command
-  zclLight1_LevelControlStepCB,        // Level Control Step command
-  zclLight1_LevelControlStopCB,        // Level Control Stop command
-#endif
 #ifdef ZCL_GROUPS
   NULL,                                   // Group Response commands
 #endif
@@ -400,7 +279,6 @@ static zclGeneral_AppCallbacks_t zclLight2_CmdCallbacks =
   NULL,                                  // RSSI Location command
   NULL                                   // RSSI Location Response command
 };
-/*end of mine */
 
 /*********************************************************************
  * @fn          zclLight_Init
@@ -415,15 +293,6 @@ void zclSmartSense_Init( byte task_id )
 {
   zclSmartSense_TaskID = task_id;
 
-  // Set destination address to indirect
-  zclLight1_DstAddr.addrMode = (afAddrMode_t)AddrNotPresent;
-  zclLight1_DstAddr.endPoint = 0;
-  zclLight1_DstAddr.addr.shortAddr = 0;
-  /*******************************/
-  /*mine*/
-  zclLight2_DstAddr.addrMode = (afAddrMode_t)AddrNotPresent;
-  zclLight2_DstAddr.endPoint = 0;
-  zclLight2_DstAddr.addr.shortAddr = 0;
 
   zclLightSensor_DstAddr.addrMode = (afAddrMode_t)Addr16Bit;
   zclLightSensor_DstAddr.endPoint = 8;
@@ -445,20 +314,17 @@ void zclSmartSense_Init( byte task_id )
   /*******************************/
   
   // This app is part of the Home Automation Profile
-  zclHA_Init( &zclLight1_SimpleDesc );
-  zclHA_Init( &zclLight2_SimpleDesc );/*mine*/ 
   zclHA_Init( &zclLightSensor_SimpleDesc );/*mine*/ 
   zclHA_Init( &zclOccupancySensor_SimpleDesc );/*mine*/ 
+  zclHA_Init( &zclTemperatureSensor_SimpleDesc );/*mine*/ 
+  zclHA_Init( &zclRHumiditySensor_SimpleDesc );/*mine*/ 
   
   // Register the ZCL General Cluster Library callback functions
   zclGeneral_RegisterCmdCallbacks( LIGHT1_ENDPOINT, &zclLight1_CmdCallbacks );
-  zclGeneral_RegisterCmdCallbacks( LIGHT2_ENDPOINT, &zclLight2_CmdCallbacks );/*mine*/ 
 
-  // Register the application's attribute list
-  zcl_registerAttrList( LIGHT1_ENDPOINT, zclLight1_NumAttributes, zclLight1_Attrs );
-  zcl_registerAttrList( LIGHT2_ENDPOINT, zclLight2_NumAttributes, zclLight2_Attrs );/*mine*/ 
-  zcl_registerAttrList( OCCUPANCYSENSOR_ENDPOINT, zclLight2_NumAttributes, zclLightSensor_Attrs );/*mine*/ 
-  zcl_registerAttrList( LIGHTSENSOR_ENDPOINT, zclLight2_NumAttributes, zclOccupancySensor_Attrs );/*mine*/ 
+  // Register the application's attribute list 
+  zcl_registerAttrList( OCCUPANCYSENSOR_ENDPOINT, zclOccupancySensor_NumAttributes, zclLightSensor_Attrs );/*mine*/ 
+  zcl_registerAttrList( LIGHTSENSOR_ENDPOINT, zclLightSensor_NumAttributes, zclOccupancySensor_Attrs );/*mine*/ 
   zcl_registerAttrList( TEMPERATURESENSOR_ENDPOINT, zclTempratureSensor_NumAttributes, zclTempratureSensor_Attrs );/*mine*/
   zcl_registerAttrList( RHUMIDITYSENSOR_ENDPOINT, zclRHumiditySensor_NumAttributes, zclRHumiditySensor_Attrs );/*mine*/   
   // Register the Application to receive the unprocessed Foundation command/response messages
@@ -466,8 +332,6 @@ void zclSmartSense_Init( byte task_id )
 
 #ifdef ZCL_DISCOVER
   // Register the application's command list
-  zcl_registerCmdList( LIGHT1_ENDPOINT, zclLight1CmdsArraySize, zclLight1_Cmds );
-  zcl_registerCmdList( LIGHT2_ENDPOINT, zclLight2CmdsArraySize, zclLight2_Cmds );
   zcl_registerCmdList( OCCUPANCYSENSOR_ENDPOINT, zclOccupancySensorCmdsArraySize, zclOccupancySensor_Cmds );
   zcl_registerCmdList( LIGHTSENSOR_ENDPOINT, zclLightSensorCmdsArraySize, zclLightSensor_Cmds );
   zcl_registerCmdList( TEMPERATURESENSOR_ENDPOINT, zclTemperatureSensorCmdsArraySize, zclTemperatureSensor_Cmds );
@@ -477,9 +341,6 @@ void zclSmartSense_Init( byte task_id )
   // Register for all key events - This app will handle all key events
   RegisterForKeys( zclSmartSense_TaskID );
 
-  // Register for a test endpoint
-  afRegister( &LIGHT_TestEp );
-
 #ifdef ZCL_EZMODE
   // Register EZ-Mode
   zcl_RegisterEZMode( &zclLight1_RegisterEZModeData );
@@ -488,27 +349,6 @@ void zclSmartSense_Init( byte task_id )
   ZDO_RegisterForZDOMsg(task_id, Match_Desc_rsp);
 #endif
 
-
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-  HalTimer1Init( 0 );
-  halTimer1SetChannelDuty( WHITE_LED, 0 );
-  halTimer1SetChannelDuty( RED_LED, 0 );
-  halTimer1SetChannelDuty( BLUE_LED, 0 );
-  halTimer1SetChannelDuty( GREEN_LED, 0 );
-
-  // find if we are already on a network from NV_RESTORE
-  uint8 state;
-  NLME_GetRequest( nwkNwkState, 0, &state );
-
-  if ( state < NWK_ENDDEVICE )
-  {
-    // Start EZMode on Start up to avoid button press
-    osal_start_timerEx( zclSmartSense_TaskID, LIGHT_START_EZMODE_EVT, 500 );
-  }
-#if ZCL_LEVEL_CTRL
-  zclLight1_DefaultMove();
-#endif
-#endif // #if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
 
 #ifdef ZCL_DIAGNOSTIC
   // Register the application's callback function to read/write attribute data.
@@ -521,56 +361,23 @@ void zclSmartSense_Init( byte task_id )
   }
 #endif
 
-#ifdef LCD_SUPPORTED
-  HalLcdWriteString ( (char *)sDeviceName, HAL_LCD_LINE_3 );
-#endif  // LCD_SUPPORTED
 
 #ifdef ZGP_AUTO_TT
   zgpTranslationTable_RegisterEP ( &zclLight1_SimpleDesc );
 #endif
   
-  /*****************mine****************/
-  /***************group membership********/
-  /**************just for test***********/
-  light_group1.ID =6;
-  light_group1.name[1] = 'R';
-  light_group1.name[2] = 'e';
-  light_group1.name[3] = 'l';
-  light_group1.name[4] = 'a';
-  light_group1.name[5] = 'y';
-  light_group1.name[6] = '1';
-  aps_AddGroup( LIGHT1_ENDPOINT, &light_group1 );
-  
-  light_group2.ID =7;
-  light_group2.name[1] = 'R';
-  light_group2.name[2] = 'e';
-  light_group2.name[3] = 'l';
-  light_group2.name[4] = 'a';
-  light_group2.name[5] = 'y';
-  light_group2.name[6] = '2';
-  aps_AddGroup( LIGHT2_ENDPOINT, &light_group2 );
-  /****************************************/
   
   //farhad  
-  error |= SHT2x_SoftReset(); // soft reset sht20
-  uint8 buf1[30]="SHT2x_SoftReset\n\r";
-  HalUARTWrite(HAL_UART_PORT_0,buf1,19);
+    error |= SHT2x_SoftReset(); // soft reset sht20
+    uint8 buf1[30]="SHT2x_SoftReset\n\r";
+    HalUARTWrite(HAL_UART_PORT_0,buf1,19);
 
 //  HalLedBlink(HAL_LED_Identify, 0,50,500);// blink led - CPU heartbeat      
   
-  // start a reload timer.On timer OVF we check ADC for measuring Sensor
-  //osal_start_reload_timer( zclIndustrialSmartSense_TaskID,SENSORS_ADC_TIMER_EVT,5000); 
-// osal_start_timerEx( zclIndustrialSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,15000);  
-  
-  //end of farhad
-  
   // start a reload timer.On timer OVF we check ADC for measuring Battery Voltage
- //osal_start_reload_timer( zclSmartSense_TaskID,LIGHT_ADC_TIMER_EVT,5000); 
- osal_start_timerEx( zclSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,15000);  
+  //osal_start_reload_timer( zclSmartSense_TaskID,LIGHT_ADC_TIMER_EVT,5000); 
+  osal_start_timerEx( zclSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,15000);  
 
-  
-  //end of mine
-  
 }
 
 /*********************************************************************
@@ -617,7 +424,6 @@ uint16 zclSmartSense_event_loop( uint8 task_id, uint16 events )
                (zclLight1_NwkState == DEV_END_DEVICE) )
           {
             giLightScreenMode = LIGHT_MAINMODE;
-            zclLight1_LcdDisplayUpdate();
 #ifdef ZCL_EZMODE
             zcl_EZModeAction( EZMODE_ACTION_NETWORK_STARTED, NULL );
 #endif // ZCL_EZMODE
@@ -647,8 +453,7 @@ uint16 zclSmartSense_event_loop( uint8 task_id, uint16 events )
 
   if ( events & LIGHT_MAIN_SCREEN_EVT )
   {
-    giLightScreenMode = LIGHT_MAINMODE;
-    zclLight1_LcdDisplayUpdate();
+
 
     return ( events ^ LIGHT_MAIN_SCREEN_EVT );
   }
@@ -757,128 +562,10 @@ static void zclLight_HandleKeys( byte shift, byte keys )
 
   if ( keys & HAL_KEY_SW_2 )
   {
-    ZDOInitDevice( 0 );//farhad
+    //ZDOInitDevice( 0 );//farhad
   }
-
-  // update the display, including the light
-  zclLight1_LcdDisplayUpdate();
-}
-
-/*********************************************************************
- * @fn      zclLight1_LcdDisplayUpdate
- *
- * @brief   Called to update the LCD display.
- *
- * @param   none
- *
- * @return  none
- */
-void zclLight1_LcdDisplayUpdate( void )
-{
-#ifdef LCD_SUPPORTED
-  if ( giLightScreenMode == LIGHT_HELPMODE )
-  {
-    zclLight1_LcdDisplayHelpMode();
-  }
-  else
-  {
-    zclLight1_LcdDisplayMainMode();
-  }
-#endif
-
-  zclLight_DisplayLight();
-}
-
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-/*********************************************************************
- * @fn      zclLight1_UpdateLampLevel
- *
- * @brief   Update lamp level output with gamma compensation
- *
- * @param   level
- *
- * @return  none
- */
-void zclLight1_UpdateLampLevel( uint8 level )
-
-{
-  uint16 gammaCorrectedLevel;
-
-  // gamma correct the level
-  gammaCorrectedLevel = (uint16) ( pow( ( (float)level / LEVEL_MAX ), (float)GAMMA_VALUE ) * (float)LEVEL_MAX);
-
-  halTimer1SetChannelDuty(WHITE_LED, (uint16)(((uint32)gammaCorrectedLevel*PWM_FULL_DUTY_CYCLE)/LEVEL_MAX) );
-}
-#endif
-
-/*********************************************************************
- * @fn      zclLight_DisplayLight
- *
- * @brief   Displays current state of light on LED and also on main display if supported.
- *
- * @param   none
- *
- * @return  none
- */
-static void zclLight_DisplayLight( void )
-{
 
 }
-
-#ifdef LCD_SUPPORTED
-/*********************************************************************
- * @fn      zclLight1_LcdDisplayMainMode
- *
- * @brief   Called to display the main screen on the LCD.
- *
- * @param   none
- *
- * @return  none
- */
-static void zclLight1_LcdDisplayMainMode( void )
-{
-  // display line 1 to indicate NWK status
-  if ( zclLight1_NwkState == DEV_ZB_COORD )
-  {
-    zclHA_LcdStatusLine1( ZCL_HA_STATUSLINE_ZC );
-  }
-  else if ( zclLight1_NwkState == DEV_ROUTER )
-  {
-    zclHA_LcdStatusLine1( ZCL_HA_STATUSLINE_ZR );
-  }
-  else if ( zclLight1_NwkState == DEV_END_DEVICE )
-  {
-    zclHA_LcdStatusLine1( ZCL_HA_STATUSLINE_ZED );
-  }
-
-  // end of line 3 displays permit join status (*)
-  if ( gPermitDuration )
-  {
-    sSwHelp[15] = '*';
-  }
-  else
-  {
-    sSwHelp[15] = ' ';
-  }
-  HalLcdWriteString( (char *)sSwHelp, HAL_LCD_LINE_3 );
-}
-
-/*********************************************************************
- * @fn      zclLight1_LcdDisplayHelpMode
- *
- * @brief   Called to display the SW options on the LCD.
- *
- * @param   none
- *
- * @return  none
- */
-static void zclLight1_LcdDisplayHelpMode( void )
-{
-  HalLcdWriteString( (char *)sSwLight, HAL_LCD_LINE_1 );
-  HalLcdWriteString( (char *)sSwEZMode, HAL_LCD_LINE_2 );
-  HalLcdWriteString( (char *)sSwHelp, HAL_LCD_LINE_3 );
-}
-#endif  // LCD_SUPPORTED
 
 /*********************************************************************
  * @fn      zclLight1_ProcessIdentifyTimeChange
@@ -894,7 +581,7 @@ static void zclLight1_ProcessIdentifyTimeChange( void )
   if ( zclLight1_IdentifyTime > 0 )
   {
     osal_start_timerEx( zclSmartSense_TaskID, LIGHT_IDENTIFY_TIMEOUT_EVT, 1000 );
-    HalLedBlink ( HAL_LED_Identify, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
+    //HalLedBlink ( HAL_LED_Identify, 0xFF, HAL_LED_DEFAULT_DUTY_CYCLE, HAL_LED_DEFAULT_FLASH_TIME );
   }
   else
   {
@@ -982,476 +669,6 @@ static void zclLight1_IdentifyQueryRspCB(  zclIdentifyQueryRsp_t *pRsp )
   }
 #endif
 }
-
-/*********************************************************************
- * @fn      zclLight1_OnOffCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received an On/Off Command for this application.
- *
- * @param   cmd - COMMAND_ON, COMMAND_OFF or COMMAND_TOGGLE
- *
- * @return  none
- */
-static void zclLight1_OnOffCB( uint8 cmd )
-{
-  afIncomingMSGPacket_t *pPtr = zcl_getRawAFMsg();
-
-  zclLight1_DstAddr.addr.shortAddr = pPtr->srcAddr.addr.shortAddr;
-
-
-  // Turn on the light
-  if ( cmd == COMMAND_ON )
-  {
-    zclLight1_OnOff = LIGHT_ON;
-  }
-  // Turn off the light
-  else if ( cmd == COMMAND_OFF )
-  {
-    zclLight1_OnOff = LIGHT_OFF;
-  }
-  // Toggle the light
-  else if ( cmd == COMMAND_TOGGLE )
-  {
-    if ( zclLight1_OnOff == LIGHT_OFF )
-    {
-      zclLight1_OnOff = LIGHT_ON;
-    }
-    else
-    {
-      zclLight1_OnOff = LIGHT_OFF;
-    }
-  }
-
-#if ZCL_LEVEL_CTRL
-  zclLight1_DefaultMove( );
-#endif
-
-  // update the display
-  zclLight1_LcdDisplayUpdate( );
-}
-
-/***************************mine**********************************
- * @fn      zclLight2_OnOffCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received an On/Off Command for this application.
- *
- * @param   cmd - COMMAND_ON, COMMAND_OFF or COMMAND_TOGGLE
- *
- * @return  none
- */
-static void zclLight2_OnOffCB( uint8 cmd )
-{
-  afIncomingMSGPacket_t *pPtr = zcl_getRawAFMsg();
-
-  zclLight1_DstAddr.addr.shortAddr = pPtr->srcAddr.addr.shortAddr;
-
-
-  // Turn on the light
-  if ( cmd == COMMAND_ON )
-  {
-    zclLight2_OnOff = LIGHT_ON;
-  }
-  // Turn off the light
-  else if ( cmd == COMMAND_OFF )
-  {
-    zclLight2_OnOff = LIGHT_OFF;
-  }
-  // Toggle the light
-  else if ( cmd == COMMAND_TOGGLE )
-  {
-    if ( zclLight2_OnOff == LIGHT_OFF )
-    {
-      zclLight2_OnOff = LIGHT_ON;
-    }
-    else
-    {
-      zclLight2_OnOff = LIGHT_OFF;
-    }
-  }
-
-#if ZCL_LEVEL_CTRL
-  zclLight2_DefaultMove( );
-#endif
-
-  // update the display
-  zclLight1_LcdDisplayUpdate( );
-}
-
-#ifdef ZCL_LEVEL_CTRL
-/*********************************************************************
- * @fn      zclLight1_TimeRateHelper
- *
- * @brief   Calculate time based on rate, and startup level state machine
- *
- * @param   newLevel - new level for current level
- *
- * @return  diff (directly), zclLight1_CurrentLevel32 and zclLight1_NewLevel, zclLight1_NewLevelUp
- */
-static uint32 zclLight1_TimeRateHelper( uint8 newLevel )
-{
-  uint32 diff;
-  uint32 newLevel32;
-
-  // remember current and new level
-  zclLight1_NewLevel = newLevel;
-  zclLight1_CurrentLevel32 = (uint32)1000 * zclLight1_LevelCurrentLevel;
-
-  // calculate diff
-  newLevel32 = (uint32)1000 * newLevel;
-  if ( zclLight1_LevelCurrentLevel > newLevel )
-  {
-    diff = zclLight1_CurrentLevel32 - newLevel32;
-    zclLight1_NewLevelUp = FALSE;  // moving down
-  }
-  else
-  {
-    diff = newLevel32 - zclLight1_CurrentLevel32;
-    zclLight1_NewLevelUp = TRUE;   // moving up
-  }
-
-  return ( diff );
-}
-
-/*********************************************************************
- * @fn      zclLight1_MoveBasedOnRate
- *
- * @brief   Calculate time based on rate, and startup level state machine
- *
- * @param   newLevel - new level for current level
- * @param   rate16   - fixed point rate (e.g. 16.123)
- *
- * @return  none
- */
-static void zclLight1_MoveBasedOnRate( uint8 newLevel, uint32 rate )
-{
-  uint32 diff;
-
-  // determine how much time (in 10ths of seconds) based on the difference and rate
-  zclLight1_Rate32 = rate;
-  diff = zclLight1_TimeRateHelper( newLevel );
-  zclLight1_LevelRemainingTime = diff / rate;
-  if ( !zclLight1_LevelRemainingTime )
-  {
-    zclLight1_LevelRemainingTime = 1;
-  }
-
-  osal_start_timerEx( zclSmartSense_TaskID, LIGHT_LEVEL_CTRL_EVT, 100 );
-}
-
-/*********************************************************************
- * @fn      zclLight1_MoveBasedOnTime
- *
- * @brief   Calculate rate based on time, and startup level state machine
- *
- * @param   newLevel  - new level for current level
- * @param   time      - in 10ths of seconds
- *
- * @return  none
- */
-static void zclLight1_MoveBasedOnTime( uint8 newLevel, uint16 time )
-{
-  uint16 diff;
-
-  // determine rate (in units) based on difference and time
-  diff = zclLight1_TimeRateHelper( newLevel );
-  zclLight1_LevelRemainingTime = zclLight1_GetTime( newLevel, time );
-  zclLight1_Rate32 = diff / time;
-
-  osal_start_timerEx( zclSmartSense_TaskID, LIGHT_LEVEL_CTRL_EVT, 100 );
-}
-
-/*********************************************************************
- * @fn      zclLight1_GetTime
- *
- * @brief   Determine amount of time that MoveXXX will take to complete.
- *
- * @param   level = new level to move to
- *          time  = 0xffff=default, or 0x0000-n amount of time in tenths of seconds.
- *
- * @return  none
- */
-static uint16 zclLight1_GetTime( uint8 level, uint16 time )
-{
-  // there is a hiearchy of the amount of time to use for transistioning
-  // check each one in turn. If none of defaults are set, then use fastest
-  // time possible.
-  if ( time == 0xFFFF )
-  {
-    // use On or Off Transition Time if set (not 0xffff)
-    if ( zclLight1_OnOff == LIGHT_ON )
-    {
-      time = zclLight1_LevelOffTransitionTime;
-    }
-    else
-    {
-      time = zclLight1_LevelOnTransitionTime;
-    }
-
-    // else use OnOffTransitionTime if set (not 0xffff)
-    if ( time == 0xFFFF )
-    {
-      time = zclLight1_LevelOnOffTransitionTime;
-    }
-
-    // else as fast as possible
-    if ( time == 0xFFFF )
-    {
-      time = 1;
-    }
-  }
-
-  if ( !time )
-  {
-    time = 1; // as fast as possible
-  }
-
-  return ( time );
-}
-
-/*********************************************************************
- * @fn      zclLight1_DefaultMove
- *
- * @brief   We were turned on/off. Use default time to move to on or off.
- *
- * @param   zclLight1_OnOff - must be set prior to calling this function.
- *
- * @return  none
- */
-static void zclLight1_DefaultMove( void )
-{
-  uint8  newLevel;
-  uint32 rate;      // fixed point decimal (3 places, eg. 16.345)
-  uint16 time;
-
-  // if moving to on position, move to on level
-  if ( zclLight1_OnOff )
-  {
-    if ( zclLight1_LevelOnLevel == ATTR_LEVEL_ON_LEVEL_NO_EFFECT )
-    {
-      // The last Level (before going OFF) should be used)
-      newLevel = zclLight1_LevelLastLevel;
-    }
-    else
-    {
-      newLevel = zclLight1_LevelOnLevel;
-    }
-
-    time = zclLight1_LevelOnTransitionTime;
-  }
-  else
-  {
-    newLevel = ATTR_LEVEL_MIN_LEVEL;
-
-    if ( zclLight1_LevelOnLevel == ATTR_LEVEL_ON_LEVEL_NO_EFFECT )
-    {
-      // Save the current Level before going OFF to use it when the light turns ON
-      // it should be back to this level
-      zclLight1_LevelLastLevel = zclLight1_LevelCurrentLevel;
-    }
-
-    time = zclLight1_LevelOffTransitionTime;
-  }
-
-  // else use OnOffTransitionTime if set (not 0xffff)
-  if ( time == 0xFFFF )
-  {
-    time = zclLight1_LevelOnOffTransitionTime;
-  }
-
-  // else as fast as possible
-  if ( time == 0xFFFF )
-  {
-    time = 1;
-  }
-
-  // calculate rate based on time (int 10ths) for full transition (1-254)
-  rate = 255000 / time;    // units per tick, fixed point, 3 decimal places (e.g. 8500 = 8.5 units per tick)
-
-  // start up state machine.
-  zclLight1_WithOnOff = TRUE;
-  zclLight1_MoveBasedOnRate( newLevel, rate );
-}
-
-/*********************************************************************
- * @fn      zclLight1_AdjustLightLevel
- *
- * @brief   Called each 10th of a second while state machine running
- *
- * @param   none
- *
- * @return  none
- */
-static void zclLight1_AdjustLightLevel( void )
-{
-  // one tick (10th of a second) less
-  if ( zclLight1_LevelRemainingTime )
-  {
-    --zclLight1_LevelRemainingTime;
-  }
-
-  // no time left, done
-  if ( zclLight1_LevelRemainingTime == 0)
-  {
-    zclLight1_LevelCurrentLevel = zclLight1_NewLevel;
-  }
-
-  // still time left, keep increment/decrementing
-  else
-  {
-    if ( zclLight1_NewLevelUp )
-    {
-      zclLight1_CurrentLevel32 += zclLight1_Rate32;
-    }
-    else
-    {
-      zclLight1_CurrentLevel32 -= zclLight1_Rate32;
-    }
-    zclLight1_LevelCurrentLevel = (uint8)( zclLight1_CurrentLevel32 / 1000 );
-  }
-
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-  zclLight1_UpdateLampLevel(zclLight1_LevelCurrentLevel);
-#endif
-
-  // also affect on/off
-  if ( zclLight1_WithOnOff )
-  {
-    if ( zclLight1_LevelCurrentLevel > ATTR_LEVEL_MIN_LEVEL )
-    {
-      zclLight1_OnOff = LIGHT_ON;
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-      ENABLE_LAMP;
-#endif
-    }
-    else
-    {
-      zclLight1_OnOff = LIGHT_OFF;
-#if (defined HAL_BOARD_ZLIGHT) || (defined HAL_PWM)
-      DISABLE_LAMP;
-#endif
-    }
-  }
-
-  // display light level as we go
-  zclLight_DisplayLight( );
-
-  // keep ticking away
-  if ( zclLight1_LevelRemainingTime )
-  {
-    osal_start_timerEx( zclSmartSense_TaskID, LIGHT_LEVEL_CTRL_EVT, 100 );
-  }
-}
-
-/*********************************************************************
- * @fn      zclLight1_LevelControlMoveToLevelCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a LevelControlMoveToLevel Command for this application.
- *
- * @param   pCmd - ZigBee command parameters
- *
- * @return  none
- */
-static void zclLight1_LevelControlMoveToLevelCB( zclLCMoveToLevel_t *pCmd )
-{
-  zclLight1_WithOnOff = pCmd->withOnOff;
-  zclLight1_MoveBasedOnTime( pCmd->level, pCmd->transitionTime );
-}
-
-/*********************************************************************
- * @fn      zclLight1_LevelControlMoveCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received a LevelControlMove Command for this application.
- *
- * @param   pCmd - ZigBee command parameters
- *
- * @return  none
- */
-static void zclLight1_LevelControlMoveCB( zclLCMove_t *pCmd )
-{
-  uint8 newLevel;
-  uint32 rate;
-
-  // convert rate from units per second to units per tick (10ths of seconds)
-  // and move at that right up or down
-  zclLight1_WithOnOff = pCmd->withOnOff;
-
-  if ( pCmd->moveMode == LEVEL_MOVE_UP )
-  {
-    newLevel = ATTR_LEVEL_MAX_LEVEL;  // fully on
-  }
-  else
-  {
-    newLevel = ATTR_LEVEL_MIN_LEVEL; // fully off
-  }
-
-  rate = (uint32)100 * pCmd->rate;
-  zclLight1_MoveBasedOnRate( newLevel, rate );
-}
-
-/*********************************************************************
- * @fn      zclLight1_LevelControlStepCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received an On/Off Command for this application.
- *
- * @param   pCmd - ZigBee command parameters
- *
- * @return  none
- */
-static void zclLight1_LevelControlStepCB( zclLCStep_t *pCmd )
-{
-  uint8 newLevel;
-
-  // determine new level, but don't exceed boundaries
-  if ( pCmd->stepMode == LEVEL_MOVE_UP )
-  {
-    if ( (uint16)zclLight1_LevelCurrentLevel + pCmd->amount > ATTR_LEVEL_MAX_LEVEL )
-    {
-      newLevel = ATTR_LEVEL_MAX_LEVEL;
-    }
-    else
-    {
-      newLevel = zclLight1_LevelCurrentLevel + pCmd->amount;
-    }
-  }
-  else
-  {
-    if ( pCmd->amount >= zclLight1_LevelCurrentLevel )
-    {
-      newLevel = ATTR_LEVEL_MIN_LEVEL;
-    }
-    else
-    {
-      newLevel = zclLight1_LevelCurrentLevel - pCmd->amount;
-    }
-  }
-
-  // move to the new level
-  zclLight1_WithOnOff = pCmd->withOnOff;
-  zclLight1_MoveBasedOnTime( newLevel, pCmd->transitionTime );
-}
-
-/*********************************************************************
- * @fn      zclLight1_LevelControlStopCB
- *
- * @brief   Callback from the ZCL General Cluster Library when
- *          it received an Level Control Stop Command for this application.
- *
- * @param   pCmd - ZigBee command parameters
- *
- * @return  none
- */
-static void zclLight1_LevelControlStopCB( void )
-{
-  // stop immediately
-  osal_stop_timerEx( zclSmartSense_TaskID, LIGHT_LEVEL_CTRL_EVT );
-  zclLight1_LevelRemainingTime = 0;
-}
-#endif
 
 /******************************************************************************
  *
@@ -1545,7 +762,7 @@ static void zclLight1_ProcessIncomingMsg( zclIncomingMsg_t *pInMsg )
 static uint8 zclLight1_ProcessInReadCmd( zclIncomingMsg_t *pInMsg )
 {
  
-    HAL_TOGGLE_LED_Identify();
+
 
     return(TRUE);
 }
@@ -1812,103 +1029,88 @@ static void zclLight1_EZModeCB( zlcEZMode_State_t state, zclEZMode_CBData_t *pDa
   }
 }
 #endif // ZCL_EZMODE
-
+/*********************************************************************
+ * @fn      zclSmartSense_ReadSensors
+ *
+ * @brief  
+ *
+ * @param   none
+ *
+ * @return  none
+ */
 static void zclSmartSense_ReadSensors(void)
 {
     //*****Read LightSensor Value*****
     char buffer[30];
+//    float temp;
     HalAdcSetReference(HAL_ADC_REF_AVDD);
-    adc_value = HalAdcRead (HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14);//read LDR 
+    adc_value = HalAdcRead (HAL_ADC_CHN_AIN7, HAL_ADC_RESOLUTION_14);//read LDR
+//    temp=((adc_value*3.3)/16384);// voltage value
+//    temp=temp/10000;//current value
+//    zclLightSensor_MeasuredValue=temp *100;
     zclLightSensor_MeasuredValue=adc_value;
-    zclLightSensor_SendIlluminance(); 
     sprintf(buffer,"Illuminance :%d \n\r",zclLightSensor_MeasuredValue);
-    HalUARTWrite(HAL_UART_PORT_0,buffer,30);     
-//    if(zclLightSensor_MeasuredValue < MIN_ILLUMINANCE)
-//    {
-//      zclLightSensor_SendIlluminance();   
-//      
-//    }
-    
+    HalUARTWrite(HAL_UART_PORT_0,buffer,osal_strlen(buffer)); 
+    zclSendReport(ILLUMINANCE);
+   
     //*****Read Temperature Sensor Value(SHT2X)*****
     char buffer1[30];
-//    uint8 buf[30]="SW_READ_SHT20_TEMP_EVT\n\r";
-//    HalUARTWrite(HAL_UART_PORT_0,buf,24);
     error |= SHT2x_MeasurePoll(TEMP, &sT);
     temperatureC = SHT2x_CalcTemperatureC(sT.u16);
-    uint16 temp = temperatureC *100;
-    zclTemperatureSensor_Measured_Value=temp;
-    sprintf(buffer1,"Temperature :%d \n\r",temp);
-    HalUARTWrite(HAL_UART_PORT_0,buffer1,30);   
-//    zclSendReport(TEMPERATURE);
+    uint16 temp1 = temperatureC *100;
+    zclTemperatureSensor_Measured_Value=temp1;
+    sprintf(buffer1,"Temperature :%d \n\r",temp1);
+    HalUARTWrite(HAL_UART_PORT_0,buffer1,osal_strlen(buffer1));   
+    zclSendReport(TEMPERATURE);
     
     //*****Read RHumidity Sensor Value(SHT2X)*****
     char buffer2[30];
-//    uint8 buf1[30]="SW_READ_SHT20_RH_EVT\n\r";
-//    HalUARTWrite(HAL_UART_PORT_0,buf1,22);
     error |= SHT2x_MeasurePoll(HUMIDITY, &sT);
     humidityRH = SHT2x_CalcRH(sT.u16);
     uint16 rh = humidityRH *100;
     zclRHumiditySensor_Measured_Value=rh;
     sprintf(buffer2,"RHumidity:%d \n\r",rh); 
-    HalUARTWrite(HAL_UART_PORT_0,buffer2,30);
-//    zclSendReport(RHUMIDITY);      
-    
-    //*****Read Battery Voltage*****
-    
-    HalAdcSetReference(HAL_ADC_REF_125V);
-    adc_value = HalAdcRead (HAL_ADC_CHN_VDD3, HAL_ADC_RESOLUTION_8);
-    adc_value = adc_value *(3.57/128)*100;
-    zclNode_BatteryVoltage = adc_value;   
-    //check if battery is low   
-    if (zclNode_BatteryVoltage < MIN_BAT_VOLTAGE)
-    {
-      zclNode_AlarmMask = BAT_ALARM_MASK_VOLT_2_LOW;
-      zclGeneral_SendAlarm( OCCUPANCYSENSOR_ENDPOINT, &zclOccupancySensor_DstAddr,
-                               ALARM_CODE_BAT_VOLT_MIN_THRES_BAT_SRC_1, ZCL_CLUSTER_ID_GEN_POWER_CFG,
-                                TRUE, zclSmartSenseSeqNum); 
-      HAL_TURN_ON_LED_Identify();
-    }
-    else
-    {
-      zclNode_AlarmMask = 0x00;
-      HAL_TURN_OFF_LED_Identify();
-    }
+    HalUARTWrite(HAL_UART_PORT_0,buffer2,osal_strlen(buffer2));
+    zclSendReport(RHUMIDITY);      
+//    
+//    //*****Read Battery Voltage*****
+//    HalAdcSetReference(HAL_ADC_REF_125V);
+//    adc_value = HalAdcRead (HAL_ADC_CHN_VDD3, HAL_ADC_RESOLUTION_8);
+//    adc_value = adc_value *(3.57/128)*100;
+//    zclNode_BatteryVoltage = adc_value;   
+//    //check if battery is low   
+//    if (zclNode_BatteryVoltage < MIN_BAT_VOLTAGE)
+//    {
+//      zclNode_AlarmMask = BAT_ALARM_MASK_VOLT_2_LOW;
+//      zclGeneral_SendAlarm( OCCUPANCYSENSOR_ENDPOINT, &zclOccupancySensor_DstAddr,
+//                               ALARM_CODE_BAT_VOLT_MIN_THRES_BAT_SRC_1, ZCL_CLUSTER_ID_GEN_POWER_CFG,
+//                                TRUE, zclSmartSenseSeqNum); 
+//    }
+//    else
+//    {
+//      zclNode_AlarmMask = 0x00;
+//    }
     
     
     osal_start_timerEx ( zclSmartSense_TaskID, SENSORS_ADC_TIMER_EVT,5000);    
 }
 
 
-static void zclLightSensor_SendIlluminance( void )
-{
-#ifdef ZCL_REPORT
-  zclReportCmd_t *pReportCmd;
-
-  pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
-  if ( pReportCmd != NULL )
-  {
-    pReportCmd->numAttr = 1;
-    pReportCmd->attrList[0].attrID = ATTRID_MS_ILLUMINANCE_MEASURED_VALUE;
-    pReportCmd->attrList[0].dataType = ZCL_DATATYPE_INT16;
-    pReportCmd->attrList[0].attrData =(void *)&zclLightSensor_MeasuredValue;
-
-    zcl_SendReportCmd( LIGHTSENSOR_ENDPOINT, &zclLightSensor_DstAddr,
-                       ZCL_CLUSTER_ID_MS_ILLUMINANCE_MEASUREMENT,
-                       pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
-  }
-
-  osal_mem_free( pReportCmd );
-#endif  // ZCL_REPORT
-}
-
-/************************************************/
-
-
-
-/*************************************************/
+/*********************************************************************
+ * @fn      zclSmartSense_PIR_SenseMv
+ *
+ * @brief  
+ *
+ * @param   none
+ *
+ * @return  none
+ */
 static void zclSmartSense_PIR_SenseMv(void)
 {
   Mv_Cnt++;
+  if(Mv_Cnt == zclOccupancySensor_UtoOThresh)
+    zclSmartSense_CheckPIR();
+    
   if( PIR_flag )
   {
     osal_start_timerEx( zclSmartSense_TaskID, zclOccupancySensor_UtoO_TIMER_EVT,(zclOccupancySensor_UtoODelay*1000) );
@@ -1943,37 +1145,118 @@ static void zclSmartSense_CheckPIR(void)
   if ( zclOccupancySensor_Occupancy != zclOccupancySensor_LastOccupancy)
   {
     zclOccupancySensor_LastOccupancy = zclOccupancySensor_Occupancy;
-    zclOccupancySensor_SendOccupancy();
+    switch(zclOccupancySensor_LastOccupancy)
+    {
+    case 0x01 :
+      HalLedSet(HAL_LED_Identify,HAL_LED_MODE_ON);
+      break;
+    case 0x00:
+      HalLedSet(HAL_LED_Identify,HAL_LED_MODE_OFF);
+      break;
+    }
+    
+    zclSendReport(OCCUPANCY);
   }
  
 }
 
-/*********************************************************/
 
 
-/***********************************************************/
-static void zclOccupancySensor_SendOccupancy(void)
+/*********************************************************************
+ * @fn      zclOccupancySensor_SendOccupancy
+ *
+ * @brief  
+ *
+ * @param   none
+ *
+ * @return  none
+ */
+static void zclSendReport(byte SensedValue)
 {
-#ifdef ZCL_REPORT
   zclReportCmd_t *pReportCmd;
-
-  pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
-  if ( pReportCmd != NULL )
+//  HalLedSet(HAL_LED_Identify,HAL_LED_MODE_TOGGLE);
+  switch(SensedValue)
   {
-    pReportCmd->numAttr = 1;
-    pReportCmd->attrList[0].attrID = ATTRID_MS_OCCUPANCY_SENSING_CONFIG_OCCUPANCY;
-    pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BITMAP8;
-    pReportCmd->attrList[0].attrData =(void *)&zclOccupancySensor_Occupancy;
-
-    zcl_SendReportCmd( OCCUPANCYSENSOR_ENDPOINT, &zclOccupancySensor_DstAddr,
-                       ZCL_CLUSTER_ID_MS_OCCUPANCY_SENSING,
-                       pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
+  case TEMPERATURE:
+#ifdef ZCL_REPORT
+    
+    pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
+    if ( pReportCmd != NULL )
+    {
+      pReportCmd->numAttr = 1;
+      pReportCmd->attrList[0].attrID = ATTRID_MS_TEMPERATURE_MEASURED_VALUE;
+      pReportCmd->attrList[0].dataType = ZCL_DATATYPE_INT16;
+      pReportCmd->attrList[0].attrData =(void *)&zclTemperatureSensor_Measured_Value;
+      
+      zcl_SendReportCmd( TEMPERATURESENSOR_ENDPOINT, &zclTemperatureSensor_DstAddr,
+                        ZCL_CLUSTER_ID_MS_TEMPERATURE_MEASUREMENT,
+                        pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
+    }
+    
+    osal_mem_free( pReportCmd );
+#endif  // ZCL_REPORT    
+    break;
+/****************************/    
+  case RHUMIDITY:
+#ifdef ZCL_REPORT
+    
+    pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
+    if ( pReportCmd != NULL )
+    {
+      pReportCmd->numAttr = 1;
+      pReportCmd->attrList[0].attrID = ATTRID_MS_RELATIVE_HUMIDITY_MEASURED_VALUE;
+      pReportCmd->attrList[0].dataType = ZCL_DATATYPE_UINT16;
+      pReportCmd->attrList[0].attrData =(void *)&zclRHumiditySensor_Measured_Value;
+      
+      zcl_SendReportCmd( RHUMIDITYSENSOR_ENDPOINT, &zclRHumiditySensor_DstAddr,
+                        ZCL_CLUSTER_ID_MS_RELATIVE_HUMIDITY,
+                        pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
+    }
+    
+    osal_mem_free( pReportCmd );
+#endif  // ZCL_REPORT     
+    break;
+/****************************/     
+  case OCCUPANCY :
+#ifdef ZCL_REPORT
+    pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
+    if ( pReportCmd != NULL )
+    {
+      pReportCmd->numAttr = 1;
+      pReportCmd->attrList[0].attrID = ATTRID_MS_OCCUPANCY_SENSING_CONFIG_OCCUPANCY;
+      pReportCmd->attrList[0].dataType = ZCL_DATATYPE_BITMAP8;
+      pReportCmd->attrList[0].attrData =(void *)&zclOccupancySensor_Occupancy;
+      
+      zcl_SendReportCmd( OCCUPANCYSENSOR_ENDPOINT, &zclOccupancySensor_DstAddr,
+                        ZCL_CLUSTER_ID_MS_OCCUPANCY_SENSING,
+                        pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
+    }
+    
+    osal_mem_free( pReportCmd );
+#endif  // ZCL_REPORT 
+    break;
+/*****************************/     
+  case ILLUMINANCE:
+#ifdef ZCL_REPORT
+    pReportCmd = osal_mem_alloc( sizeof(zclReportCmd_t) + sizeof(zclReport_t) );
+    if ( pReportCmd != NULL )
+    {
+      pReportCmd->numAttr = 1;
+      pReportCmd->attrList[0].attrID = ATTRID_MS_ILLUMINANCE_MEASURED_VALUE;
+      pReportCmd->attrList[0].dataType = ZCL_DATATYPE_INT16;
+      pReportCmd->attrList[0].attrData =(void *)&zclLightSensor_MeasuredValue;
+      
+      zcl_SendReportCmd( LIGHTSENSOR_ENDPOINT, &zclLightSensor_DstAddr,
+                        ZCL_CLUSTER_ID_MS_ILLUMINANCE_MEASUREMENT,
+                        pReportCmd, ZCL_FRAME_SERVER_CLIENT_DIR, TRUE, zclSmartSenseSeqNum++ );
+    }
+    
+    osal_mem_free( pReportCmd );
+#endif  // ZCL_REPORT
+    break;
+  } // switch(SensedValue)
 }
 
-  osal_mem_free( pReportCmd );
-#endif  // ZCL_REPORT  
-  
-}  
 
 /****************************************************************************
 ****************************************************************************/

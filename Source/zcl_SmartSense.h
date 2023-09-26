@@ -83,6 +83,11 @@ extern "C"
 
 #define MIN_BAT_VOLTAGE     330
 #define MIN_ILLUMINANCE     3000
+  
+#define TEMPERATURE     1
+#define RHUMIDITY       2
+#define OCCUPANCY       3
+#define ILLUMINANCE     4
 
 /*********************************************************************
  * MACROS

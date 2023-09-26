@@ -81,16 +81,6 @@ u8t SHT2x_MeasureHM(etSHT2xMeasureType eSHT2xMeasureType, nt16 *pMeasurand)
   I2c_StartCondition();
   error |= I2c_WriteByte (I2C_ADR_R);
   
-  /*
-  SCL=HIGH; // set SCL I/O port as input
-  for(i=0; i<1000; i++) // wait until master hold is released or
-  { DelayMicroSeconds(1000); // a timeout (~1s) is reached
-  if (SCL_CONF==1) break;
-  }
-  //-- check for timeout --
-  if(SCL_CONF==0) error |= TIME_OUT_ERROR;
-  */
-  
   //-- read two data bytes and one checksum byte --
   pMeasurand->s16.u8H = data[0] = I2c_ReadByte(ACK);
   pMeasurand->s16.u8L = data[1] = I2c_ReadByte(ACK);
@@ -104,43 +94,8 @@ u8t SHT2x_MeasureHM(etSHT2xMeasureType eSHT2xMeasureType, nt16 *pMeasurand)
 u8t SHT2x_MeasurePoll(etSHT2xMeasureType eSHT2xMeasureType, nt16 *pMeasurand)
 //===========================================================================
 {
-//  u8t checksum; //checksum
-//  u8t data[2]; //data array for checksum verification
   u8t error=0; //error variable
-//  u16t i=0; //counting variable
-//  //-- write I2C sensor address and command --
-//  I2c_StartCondition();
-//  error |= I2c_WriteByte (I2C_ADR_W); // I2C Adr
-//  switch(eSHT2xMeasureType)
-//  { 
-//  case HUMIDITY: 
-//    error |= I2c_WriteByte (TRIG_RH_MEASUREMENT_POLL); 
-//    break;
-//  case TEMP : 
-//    error |= I2c_WriteByte (TRIG_T_MEASUREMENT_POLL); 
-//    break;
-//  }
-//  //-- poll every 10ms for measurement ready. Timeout after 20 retries (200ms)--
-//  do
-//  { 
-//    I2c_StartCondition();
-//    DelayMicroSeconds(10000); //delay 10ms
-//    if(i++ >= 20) break;
-//  } while(I2c_WriteByte (I2C_ADR_R) == ACK_ERROR);
-//  
-//  if (i>=20) 
-//    error |= TIME_OUT_ERROR;
-//  //-- read two data bytes and one checksum byte --
-//  pMeasurand->s16.u8H = data[0] = I2c_ReadByte(ACK);
-//  pMeasurand->s16.u8L = data[1] = I2c_ReadByte(ACK);
-//  checksum=I2c_ReadByte(NO_ACK);
-//  //-- verify checksum --
-//  error |= SHT2x_CheckCrc (data,2,checksum);
-//  I2c_StopCondition();
-  //return error;
-  
-  /*******farhad****/
-  I2CMasterSlaveAddrSet(I2C_ADR,false);
+  I2CMasterSlaveAddrSet(I2C_ADR,false); // address is 64 and action is write
   switch(eSHT2xMeasureType)
   { 
   case HUMIDITY: 
@@ -203,7 +158,6 @@ u8t SHT2x_MeasurePoll(etSHT2xMeasureType eSHT2xMeasureType, nt16 *pMeasurand)
     return 0;
   }   
 
-  
 return error;  
 }
 //===========================================================================
@@ -211,12 +165,7 @@ u8t SHT2x_SoftReset()
 //===========================================================================
 {
   u8t error=0; //error variable
-//  I2c_StartCondition();
-//  error |= I2c_WriteByte (I2C_ADR_W); // I2C Adr
-//  error |= I2c_WriteByte (SOFT_RESET); // Command
-//  I2c_StopCondition();
-//  DelayMicroSeconds(15000); // wait till sensor has restarted
-  
+ 
   I2CMasterSlaveAddrSet(I2C_ADR,false);
   I2CMasterDataPut(SOFT_RESET);
   I2CMasterControl(I2C_MASTER_CMD_SINGLE_SEND);
